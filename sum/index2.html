@@ -53,6 +53,7 @@
 </div>
 <div class="list" style="border:1px solid red;margin:5px 0px;overflow:auto">
     <p style="font-size:0.2rem;">每天添加：</p>
+    <input type="text" class="num"/>
 </div>
 <div class="addSum" style="border:1px solid green;margin:5px 0px"></div>
 <script src="jquery.js"></script>
@@ -77,26 +78,38 @@ win.addEventListener(resizeEvt, recalc, false);
 doc.addEventListener('DOMContentLoaded', recalc, false);
 })(document, window);
 $(function(){
-    $(".add").click(function(){
-        var html='<input type="text" class="num" style="width:40%;float:left;margin:0px 0.05rem 0.05rem 0px "/>'
-        $(".list").append(html)
-    })
+    // $(".add").click(function(){
+    //     var html='<input type="text" class="num" style="width:40%;float:left;margin:0px 0.05rem 0.05rem 0px "/>'
+    //     $(".list").append(html)
+    // })
     $(".sum").click(function(){
         var sum=0;
-        for(var i=0;i<$("input").length;i++){
-            sum=sum+parseFloat($("input").eq(i).val());
+        var text=$("input").val();
+        var arr=[];
+        arr=text.split('+');
+        var reg = /^[0-9]+.?[0-9]*$/;
+        var mark=0;
+        for(var i=0;i<arr.length;i++){
+            if(reg.test(parseFloat(arr[i]))){
+                sum=sum+parseFloat(arr[i])
+            }else{
+                mark=1;
+            }
         }
-        var html='计算的总数是：'++sum.toFixed(2);;
+        if(mark==1){
+            alert('请注意里面有不是数字的，可能导致总数不对，所以要详细看一下')
+        }
+        var html='计算的总数是：'+sum.toFixed(2);
         $(".addSum").html(html)
     })
-    $("body").on('keyup','input',function(){
-        var text=parseFloat($(this).val());
-        var reg = /^[0-9]+.?[0-9]*$/;
-        if(!reg.test(text)){
-            alert('输入的不是数字，请重新输入');
-            $(this).val('')
-        }
-    })
+    // $("body").on('keyup','input',function(){
+    //     var text=parseFloat($(this).val());
+    //     var reg = /^[0-9]+.?[0-9]*$/;
+    //     if(!reg.test(text)){
+    //         alert('输入的不是数字，请重新输入');
+    //         $(this).val('')
+    //     }
+    // })
 })
 </script>
 </body>
