@@ -109,6 +109,7 @@
         // svg.on('click',function(){
         //     alert(1)
         // })
+        //矩形坐标轴
         var data=[10,30,20,15,25];
         var width=20;
         var svg=d3.select('.jichu').append('svg').attr('width',400).attr('height',500);
@@ -124,19 +125,35 @@
         var r=svg.selectAll('rect').data(data).enter().append('rect').attr('height',function(d,i){return 465-ayis(d)-15}).attr('width',width).attr('x',function(d,i){return axis(i*20+5)}).attr('y',function(d,i){return ayis(d)+20}).attr('fill','red')
         var t=svg.selectAll('text').data(data).enter().append('text').attr('x',function(d,i){return axis(i*20+5)}).attr('y',0).text(function(d){return d})
         //圆形
-        // var dataset=[20,30,40,50];
-        // var pie=d3.layout.pie();
-        // var pieData=pie(dataset);
-        // var outRadius=150;
-        // var innerRadius=0;
-        // var width=400;
-        // var arc=d3.svg.arc().innerRadius(innerRadius).outerRadius(outRadius);
-        // var svg=d3.select('.jichu').append('svg').attr('width',400).attr('height',500);
-        // var arcs=svg.selectAll('g').data(pieData).enter().append('g').attr('transform','translate('+(width/2)+','+(width/2)+')');
-        // var color=d3.scale.category10();
-        // arcs.append('path').attr('fill',function(d,i){return color(i)}).attr('d',function(d){return arc(d)})   
-        // arcs.append('text').attr('transform',function(d){return 'translate('+arc.centroid(d)+')'}).attr('text-anchor','middle').text(function(d){return d.data;})
-        
+        var dataset=[20,30,40,50];
+        var pie=d3.layout.pie();
+        var pieData=pie(dataset);
+        var outRadius=150;
+        var innerRadius=100;
+        var width=400;
+        var arc=d3.svg.arc().innerRadius(innerRadius).outerRadius(outRadius);
+        var svg=d3.select('.jichu').append('svg').attr('width',400).attr('height',500);
+        var arcs=svg.selectAll('g').data(pieData).enter().append('g').attr('transform','translate('+(width/2)+','+(width/2)+')');
+        var color=d3.scale.category10();
+        arcs.append('path').attr('fill',function(d,i){return color(i)}).attr('d',function(d){return arc(d)})   
+        arcs.append('text').attr('transform',function(d){return 'translate('+arc.centroid(d)+')'}).attr('text-anchor','middle').text(function(d){return d.data;})
+        //力导图
+        var nodes=[{name:'北京'},{name:'上海'},{nane:'广州'},{name:'深圳'},{name:'香港'},{name:'重庆'}]
+        var lines=[{source:0,target:1},{source:1,target:2},{source:2,target:3},{source:3,target:4},{source:4,target:5},{source:1,target:4},{source:2,target:5}]
+        var width=400,height=600;
+        var force=d3.layout.force().nodes(nodes).links(lines).size([width,height]).linkDistance(100).charge([-400]);
+        force.start();
+        var svg=d3.select('.jichu').append('svg').attr('width',400).attr('height',600);
+        var svg_edgs=svg.selectAll('line').data(lines).enter().append('line').style('stroke','#ccc').style('stroke-width',1)
+        var color=d3.scale.category20();
+
+        var svg_nodes=svg.selectAll('circle').data(nodes).enter().append('circle').attr('r',20).style('fill',function(d,i){return color(i)}).call(force.drag)
+        var svg_text=svg.selectAll('text').data(nodes).enter().append('text').style('color','black').attr('dx',20).attr('dy',8).text(function(d,i){return d.name})
+        force.on('tick',function(){
+            svg_edgs.attr('x1',function(d){return d.source.x}).attr('y1',function(d){return d.source.y}).attr('x2',function(d){return d.target.x}).attr('y2',function(d){return d.target.y})
+            svg_nodes.attr('cx',function(d){return d.x}).attr('cy',function(d){return d.y})
+            svg_text.attr('x',function(d){return d.x}).attr('y',function(d){return d.y})
+        })
         //柱形图
         // var dataList=[20,30,40];
         // var dataHeight=30;
@@ -370,7 +387,7 @@
         // nodes.call(force.drag);
         // force.on('tick',tick).start();
         //8
-
+ 
     </script>
 </body>
 </html>
