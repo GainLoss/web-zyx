@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+     body{
+            font-family: Monospace;
+            background: #f0f0f0;
+            margin: 0px;
+            overflow: hidden;
+        }
+    div{  
+        background: url(img/bg.jpg) no-repeat center center ;
+        background-size:100% 100%
+    }
+    </style>
+</head>
+<body>
+        <div id="zh_globe_container"></div>
+<script type="text/javascript" src="./js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="./js/three.js"></script>
+<script src="./js/OrbitControls.js"></script>
+<script src="./js/stats.js"></script>
+<script>
+
+var log = console.log.bind(console);
+globeObj()
+function globeObj(){
+    'use strict';
+
+    // 判断浏览器是否支持webgl
+    //if(!Detector.webgl) Detector.addGetWebGLMessage();
+
+    var container, stats;
+    var camera, scene, renderer;
+    var group;
+    var mouseX = 0, mouseY = 0;
+    var winWth = window.innerWidth, winHgt = window.innerHeight;
+
+    // 获取position
+    function getPosition(lng, lat, alt) {
+        var phi = (90-lat)*(Math.PI/180),
+            theta = (lng+180)*(Math.PI/180),
+            radius = alt+200,
+            x = -(radius * Math.sin(phi) * Math.cos(theta)),
+            z = (radius * Math.sin(phi) * Math.sin(theta)),
+            y = (radius * Math.cos(phi));
+        return {x: x, y: y, z: z};
+    }
+
+
+    //点动画//北京116.401969,39.935519   上海121.460076,31.22741
+    var verArr=[
+        {lng:116.401969,lat:39.935519},
+        //{lng:-110.192333,lat:40.759426}
+        {lng:121.460076,lat:31.22741}
+    ]
+    var coordsNum=2;
+    function addLightPoint(pos, coordsNum ,verArr) {   
+        var pointGeometry = new THREE.BoxGeometry(3, 3, 3, 0,0,0);
+        let map=new THREE.TextureLoader().load('img/1.jpg')
+        var pointMaterial = new THREE.MeshBasicMaterial({map:map});
+        var pointMesh = new THREE.Mesh(pointGeometry, pointMaterial);
+        pointMesh.position.set(pos.x,pos.y, pos.z);
+        group.add(pointMesh);
+    }
+    
+    //绘制曲线
+    function renderLine(){
+        var p1=getPosition(114.054589,40.943221, -50)
+        var p2=getPosition(110.890254,32.922577, -49)
+        var p3=getPosition(106.69567,26.437742, -50)
+        var spline = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(p1.x,p1.y,p1.z),
+            new THREE.Vector3(p2.x,p2.y,p2.z),
+            new THREE.Vector3(p3.x,p3.y,p3.z),
+        ]);
+        var points = spline.getPoints(20);//细分数为20，从spline曲线上获取系列顶点数据
+        var geometry = new THREE.Geometry();//声明一个空几何体对象
+        geometry.vertices = points; //顶点坐标添加到geometry对象
+        var material=new THREE.LineBasicMaterial({
+            color:0xff0000 //线条颜色
+        });//材质对象
+        var line=new THREE.Line(geometry,material);//线条模型对象
+        group.add(line);//线条对象添加到场景中
+        MovePoint(points)
+    }
+    //曲线点
+    function MovePoint(verArr){
+        var coordsNum1=20;
+        var pointGeometry = new THREE.BoxGeometry(3, 3, 3, 0,0,0);
+        let map=new THREE.TextureLoader().load('img/1.jpg')
+        var pointMaterial = new THREE.MeshBasicMaterial({map:map});
+        var pointMesh = new THREE.Mesh(pointGeometry, pointMaterial);
+        group.add(pointMesh);
+        var index = 0;
+        function pointAnimate() {
+            index++;
+            if(index>coordsNum1) {
+                index = 0;
+            }
+            pointMesh.position.set(verArr[index].x, verArr[index].y, verArr[index].z);
+            requestAnimationFrame(pointAnimate);
+        }
+        pointAnimate();
+    }
+    // 地球
+    function globe() {
+        var globeTextureLoader = new THREE.TextureLoader();
+        globeTextureLoader.load('img/earth.jpg', function (texture) {
+            var globeGgeometry = new THREE.SphereGeometry(150, 100,100);
+            var globeMaterial = new THREE.MeshStandardMaterial({map: texture});
+            var globeMesh = new THREE.Mesh(globeGgeometry, globeMaterial);
+            group.add(globeMesh);
+            group.rotation.x = THREE.Math.degToRad(35);
+            group.rotation.y = THREE.Math.degToRad(170);
+        });
+    }
+
+    // 星点
+    function stars() {
+        var starsGeometry = new THREE.Geometry();
+        for (var i = 0; i < 2000; i ++) {
+            var starVector = new THREE.Vector3(
+                THREE.Math.randFloatSpread(2000),
+                THREE.Math.randFloatSpread(2000),
+                THREE.Math.randFloatSpread(2000)
+            );
+            starsGeometry.vertices.push(starVector);
+        }
+        var starsMaterial = new THREE.PointsMaterial({color: 0x888888})
+        var starsPoint = new THREE.Points(starsGeometry, starsMaterial);
+        group.add(starsPoint);
+    }
+
+    // 光
+    function lights() {
+        var hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x333333, 2);
+        hemisphereLight.position.x = 0;
+        hemisphereLight.position.y = 0;
+        hemisphereLight.position.z = -200;
+        group.add(hemisphereLight);
+    }
+
+    // 初始化
+    function init() {
+        container = document.getElementById('zh_globe_container');
+
+        scene = new THREE.Scene();
+        var bgTexture = new THREE.TextureLoader().load("img/bg.jpg");
+        scene.background = bgTexture;
+
+        camera = new THREE.PerspectiveCamera(50, winWth/winHgt, 1, 2000);
+        camera.up.x = 0;
+        camera.up.y = 1;
+        camera.up.z = 0;
+        camera.position.x = 0;
+        camera.position.y = 0;
+        camera.position.z = 400;
+        camera.lookAt(0,0,0);
+
+        group = new THREE.Group();
+        scene.add(group);
+
+        // 地球    
+        globe();
+        var position = getPosition(114.054589,40.943221, -50);
+        addLightPoint(position,coordsNum ,verArr)
+        var position1 = getPosition(106.69567,26.437742, -50);
+        addLightPoint(position1,coordsNum ,verArr)
+
+        //绘制曲线
+        renderLine()
+        // 星点
+        //stars();
+    
+        // 半球光
+        lights();
+
+        // 渲染器
+        renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(winWth, winHgt);
+        container.appendChild(renderer.domElement);
+
+        // 盘旋控制
+        var orbitControl = new THREE.OrbitControls(camera, renderer.domElement);
+        orbitControl.minDistrance = 20;
+        orbitControl.maxDistrance = 50;
+        orbitControl.maxPolarAngle = Math.PI/2;
+
+        // 性能测试
+        stats = new Stats();
+        container.appendChild(stats.dom);
+
+        // resize事件
+        window.addEventListener('resize', onWindowResize, false);
+    }
+
+    // 窗口大小改变
+    function onWindowResize() {
+        camera.aspect = window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    // 渲染
+    function render() {
+        group.rotation.y -= 0.0005;
+        renderer.render(scene, camera);
+    }
+
+    // 动画
+    function animate() {
+        requestAnimationFrame(animate);
+        render();
+        stats.update();
+    }
+
+    init();
+    animate();    
+}
+
+</script>
+</body>
+</html>
